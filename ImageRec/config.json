@@ -1,0 +1,9 @@
+{
+	"Dataset" : "CIFAR10",
+	"Model" : {
+		"Name" : "Simple_CNN",
+		"Flatten" : false
+	},
+	"Num_epoch": 10,
+	"Batch_size": 100
+}
