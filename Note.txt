@@ -1,0 +1,345 @@
+● Data Augmentation
+make more synthetically modified data to learn
+For images, we can edit the images, like Flip, Rotation, Scale, Crop, Translation, add noise
+Advanced: GAN!?
+
+● Imbalanced samples:
+1. oversampling/undersampling
+2. Easy ensemble: undersampling + ensemble 
+3. boosting
+4. K Nearest Neighbor KNN
+5. for minority, do data augmentation (SMOTE)
+6. event weights
+7. one class learning (only predict yes/no for one class, like clustering?)	
+	
+★ Some info of NN algorithm
+▼ Simple NN working flow:
+	create random weights for all neural -> forwarding to get a out put -> backwarding to do gradient descent and update weights by optimizer -> do forwarding and backwarding iteratively and decrease the error rate to get best model
+	
+▼ Loss function: huber = mse + mae
+▼ Initializer: 
+
+▼ activation layer:	multiply the output by squashing function (activation function), 
+					to limit the domain of output (e.g. use tanh to constrain them between -1,1, or 0,1 to be classifier)
+					example: sigmoid function in the every neurons of classifier (logistical regression)
+					softmax function: used for multi classifier (the last layer)
+					maxout layer(somehow like dropout, how to implement?)
+
+▼ back-propagation: the efficient technique to calculate the gradient descent in NN (by chain rule, calculate forward pass + backward pass)
+▼ optimizer: update weight based on gradient descent, with optimized learning rate.
+			'adam'= RMSprop + momentum
+▼ Batch normalization: To reduce "internal covariate shift", can help to reduce overfitting
+can ahead or behind the activation function! (some activation function like sigmoid, ahead is recommended)
+
+※	KERAS don't run regularization and dropout when do testing.
+	Regularization mechanisms, such as Dropout and L1/L2 weight regularization, are turned off at testing time.
+▼ regularization: add regularization term to the loss function, change the weight of updated weights(weights in neuron or the factor of function) in the loss function, let model to be smooth, not sensitive to the training data
+we need to minimize Loss, add regularization leading minimize weight->small weights lead the result not so sensitive to inputs.
+why l1 leads sparse? the minimum of Loss of the weight will be zero!
+
+▼ Dropout(p): dropout p% neurons and weights become (1-p)% when we do training. For testing we use all neurons. (a kind of ensemble method, different on activation function) Become faster when training
+
+▼ batch size: separate training data to several batches (random), start from one batch to update weights and then go through all batches
+1 epoch: go through all epochs
+total #updates: #batch*#epoch
+batch size=1 => stochastic gradient descent
+large batch size => easy to go saddle point, bad performance
+
+
+▼ Find the best model: not just trust the testing dataset!
+						we need: training set, validation set, testset
+						1. train model by training set, test on validation set, choose the best model
+						2. train this model, use (training + validation) set to get final model
+						
+▼ N-fold cross validation: separate different training set and validation set and test them several times, get average.
+
+▼ error source:	use different data to train the same model, check the results(variance and bias) from different trained models
+				high variance->overfitting(need more data, generate pseudo data, regularization)
+				large bias->underfitting (model doesn't include our target, need to redesign the model (more features, more complex model...))
+				how to improve the model?
+▼ Ensemble models & stacking:
+
+
+▼ some tips:
+1. fat is better than deep (?) -> but hard to train
+2. Overfitting: Earlying stopping, Regularization, Dropout
+3. Bad training: Tune structure, activation function, optimzer(learning rate)
+
+
+▼ Transfer learning: we have target data (we are instersting) & source data (not intersted)
+● Both dataset are labeled:
+1. fine tuning: use source data to build an initial model, then train this model by target data 
+◎	conservative training: give some constarint in the initail model (add regularization): output close/parameter close
+◎	layer transfer: use some constant trained-layers from the initial model in your new model, only train the new layers by the target data
+	......which layers should be transferred??? case by case!
+	Ex: image: transfer first layer/speech recognize: transfer last layer ... ...
+	ref: arXiv:1411.1792 (transfer+fine tuning is better!)
+2. Multi-task Learning (MTL): multi output model
+	Ex: Multilingual speech recognize
+	multi-task learning for multiple language translation
+	http://ruder.io/multi-task/
+3.Progressive Neural Network (?) arXiv:1606.04671
+● Only source datasets are labeled
+1. Domain-adversarial training
+Look at t-SNE (Dimensionality reduction) plots, source and target are in different domain!
+t-SNE & PCA (https://medium.com/d-d-mag/d4254916925b )
+Use the feature extrators (ex. the first few layers of NN) to build a domain classifier to discriminate their domain (from source or target)-> we want the classifier which is bad!
+Also, use the feature extrators to build a model predicting the labels, better is better!
+->add gradient reversal layer ahead of domain classifier
+
+2. Zero-shot Learning: target data have labels (and we don't know it) which are not included in source data!
+(Ex. speech recognition problems: predict Phoneme->get words)
+For image recognition (ex. for animals), we need to build a database with representing attributes! (ex. #legs, furry, with/without tail...)
+Predict attributes->check lookup table and find the answer
+we can use word vectors to build attributes! DeViSE(https://research.google.com/pubs/archive/41473.pdf )
+**(not clear...) We need a "embedding space" with several NNs, to minimize the distance between NN of attributes and NN of animals(?)
+Convex Combination of Semantic embedding
+arxiv: 1312.5650v3
+text translation example: arxiv:1611.04558
+
+● labeled target/ unlabeled target: self-taught, clustering
+● unlabeled target/ non-labeled target: self-taught, clustering
+
+▼ SVM
+predict: y=1 or -1 (binary classifier)
+discriminator: f(x), if f(x)>0, we predict y=1, reversely y=-1
+
+LossFunction (Convex function):
+Hinge Loss: max(0,1 - y*f(x)), if y and f have same sign and higher than 1 (penalty), we consider that the prediction is perfect!
+			+ L2 regularization
+
+Function set: f(x)=w^Tx, x with constant term!
+
+gradient descent or other method to train...
+traditional SVM: use quadratic programming			
+
+We can have a linear SVM, deep SVM ...
+			
+※ due to this loss function, not all data points will be used to update the weights (sparse). The used data we call it "support vector"
+We can derive "Kernel function": K(x_n, x), x_n is support vector.
+f(x)=sigma_n(alpha_n * K_n)
+alpha can be derived by how you minimize the loss function to update weight!
+->problem becomes: how to find alpha_n?
+
+Kernel trick: we only need the kernel function, don't need to go over all data points.
+if we have feature transform process, it can be calculated easily..
+we can have other kernel method, ex:
+RBF kernel: K(x,z) = exp(-1/2|x-z|^2)use exponential to mimic as a Taylor transform with infinite dimension.
+sigmoid kernel: K=tanh(x‧z), like 1 hidden layer NN :p
+
+Kernel can be considered as "similarity"
+Use Mercer's thm to check whether you can consider a kernel as the inner product of two vectors.
+
+▼ structure learning
+
+
+▼ RNN, deal the sequential problems!
+● simple RNN
+
+Ex: slot filling (in speech recognition)
+use word vec/word hashing(ex. apple -> app/ppl/ple, 26x26x26 dimensions)
+but this problem needs NN to have "memory" !
+
+store output of each layer, and consider the stored output when next input comes.
+we need to prepare initial values for the stored output.
+
+elman: use hidden layer
+jordan: use final output
+bidirectional RNN: add a layer which trained by the training data with the reversed sequence
+
+● LSTM (long short-term memory)
+
+The LSTM cell:
+
+Input gate: for write data in memory
+Output gate: for read data from memory
+Forget gate: for deleting data in memory 
+
+the cell needs to learn how to control these gates! => 4 input (data, and controller of three gates) 1 output
+
+gates use sigmoid function:
+input		= sigmoid(input gate Z_i) * activeF(data)
+stored data	= input +(stored data) * sigmoid(forget gate Z_f)
+output		= sigmoid(output gate Z_o)*activeF(stored data)
+
+more strong: like recurrent, we add stored data, final output into input data!
+
+In keras, three kinds of RNN is supported: LSTM, GRU, SimpleRNN
+
+advanced BP (BPTT)
+
+● RNN outcomes:
+very rough loss surface! it will have gaps (gradient exploding) and very smooth surface (gradient vanish)...
+due to the weights are used again and again!
+LSTM will have less smooth surface, but still gaps. ->smaller learning rate.
+(Due to the memory are not always reset, the memory can be kept longer.)->forget gate should not reset too frequently.
+GRU (gated recurrent unit): input gate <-> forget gate: do reset when do input!
+
+● Other tech: Clockwise, SCRN, initial with identity+ReLu(?)
+
+● application:
+◎ many to one: slots, sentiment, ...
+◎ many(long) to many(short): speech recognition
+connectionist Temporal classification (CTC)->add a output label "null" , and try all possible alignments! 
+◎ many(???) to many(???):sequence to sequence learn, ex: translation, auto-encoder (xxx to vector)
+
+● attention model: http://speech.ee.ntu.edu.tw/~tlkagk/courses/MLDS_2015_2/Lecture/Attain%20(v3).ecm.mp4/index.html
+reading head/writing head, ...
+ KERAS example: babi_memnn.py
+v2: Neural Turing Machine
+
+● integrated together!
+Ex. speech recognition: CNN/LSTM/DNN + HMM 
+
+DEEP + structure learning book
+http://www.deeplearningbook.org
+
+▼ CNN
+CNN application: A Neural Algorithm of Artistic Style
+CapsNet:1710.09829
+
+● Visualization
+CAM: class activation mapping
+arXiv:1311.2901
+
+▼ ResNet/DenseNet
+
+▼ Landmark detection
+labeled with [p_c, x, y]
+
+
+▼ Object Detection
+labeled with [p_c, x, y, width, height, c_1, c_2, ...]
+p_c: probability of whether there are objects or not.
+x,y: the central of bounding box
+width, height: the shape of bounding box
+c_1, c_2,...: categories
+
+metric for object detection: 
+Jaccard index, Intersection over Union(IoU): (area of overlap)/(area of union(the whole area of true and predicted))
+mAP (mean Average Precision): the average of maximum precision at all recall levels, based on IoU
+● Traditional method: Cascade + HOG/DPM + Haar/SVM
+
+● sliding windows:
+	(1).training with closely cropped images->slide your window with certain size in the test image and input the image in the window to CNN.
+	(2).	1.convolution method: take the full connected layer as ConvNet with 1x1 filter
+			2.apply these trained filters to larger images, the full connected layer will be a solid layer.
+	(3).the solid output will be the results of each sliding windows! strides will be defined by maxpooling. 
+	Paper: arXiv: 1312.6229
+	
+● one stage: YOLO/SSD
+anchor box:
+	0. the same grid can have two different objects.
+	1. define several anchor box shapes, labeled the objects in the grids to the anchor box which has the most similar shape to the object.
+	2. If there are two or more objects (more than # anchor boxes), or two objects with similar shapes ... do some default tiebreaker.
+	3. advanced: use k-means method to choose the anchor box.
+
+SSD: arXiv:1512.02325
+	Image->VGG16->
+	Loss: smooth L1 loose for BBox + softmax loss over multiple classes
+	Atrous Convolution(dilation conv): Convolution with holes (https://github.com/vdumoulin/conv_arithmetic/raw/master/gif/dilation.gif)
+
+YOLO:
+	● slice the training image to NxN grids, and label them with object information, output becomes NxNx(original features).
+	if there is a obeject inside many grids, just label the centered one!
+	● involve anchor box for each grids!
+	● Non-max suppression: in the test, if there are many grids thinking that they have the same object. choose one which has the highest probability.
+	1. remove some anchors with low object probability
+	2. choose highest probability anchor for each detected categories.
+
+Based on ResNet, FPN, anchor box
+
+problem: It will produce too many background b-boxes, become an inbalance sample problem.
+solved: use focal loss!
+RetinaNet(feature pyramid networks(FPN) + sub-network + focal loss): Arxiv:1708.02002
+	Can be implemented by ImageAI
+
+DenseBox
+
+● two stage: Region CNN, R-CNN,SPPNet,Fast R-CNN, Faster R-CNN
+RCNN: region proposals->CNN->SVM->regression
+	1. get region proposals by selective search
+	2. normalize each proposals and feed to CNN
+	3. feed CNN output (features) to SVM to do classification, and bbox regression
+SPPNet:
+
+Fast RCNN: figure->CNN->RoIPooling->...
+	only one times in CNN!
+	RoIPooling (Region of Interest Pooling)
+
+Faster RCNN: figure->CNN->RPN
+	Region Proposal Network(RPN): use CNN(FCN?) features to select proposals.
+	
+▼ Object Segmentation
+● Region-Based Semantic Segmentation
+● Fully Convolutional Network-Based (FCN) Semantic Segmentation
+UpPooling, Deconvolution(convolution with fractional strides, transpose conv), padding
+animations: https://github.com/vdumoulin/conv_arithmetic
+Ex. Cov:   4x4->(3x3 filter)->2x2
+	deCov: 2x2->(padding)->6x6->(3x3 filter)->4x4
+	deCov+stride padding: 2x2->(padding)->7x7->(3x3 filter)->5x5
+	
+● U-net
+
+● SegNet and DeconvNet
+MaxPoolIndice: remember the original position of maxpooled layer (others are zero)
+Ex: |1 2 3 2|->|2 4|->|0 2 0 0|
+	|1 1 4 2|  |6 8|  |0 0 4 0|
+	|6 2 1 8|         |6 0 0 8|
+	|3 4 2 4|         |0 0 0 0|
+
+
+	
+● Weakly Supervised Semantic Segmentation
+
+● Mask RCNN:
+	Fully Convolutional Network(FCN)
+	RoIAlign
+
+● DeepLab (v1,v2,v3,v3+) from google
+CovN + Atrous ConV + Fully Connected Conditional Random Field (CRFs)
+v3+: arXiv:1802.02611
+	
+▼ Natural Language Processing (NLP) to rebuild feature 
+
+▼ Other Models:
+topic model (LSA、PLSA、LDA)
+HMM, CRF
+Bayesian, BN
+GMM and EM
+
+▼ Reinforcement Learning
+environment package: OpenAI Gym
+
+▼ GAN
+
+★ BDT review
+Random forest: boost trapping + bagging with several trees only with m features (m<<all features).
+
+AUC: integrated area of ROC
+
+★ Check model good or bad
+For classifier: confusion-matrix
+Check Accuracy, Precision, Recall
+Examples: two cats: A:80, B:20
+we predict there are 50 in cat A
+True Positive	(TP): 20
+False Positive	(FP): 30
+False Negative	(FN): 0
+True Negative	(TN): 50
+(A)Accuracy: 70% (50+20)/100 	(TN+TP)/Total
+(P)Precision: 40% 20/50		TP/(TP+FP)
+(R)Recall: 100% 20/20			TP/(TP+FN)
+F1-Score: F^2 = 1/P + 1/R
+F?-Score: F^2 = (1+beta^2)(P*R)/(beta^2*P + R), ?=beta
+IoU: TP/(FN+TP+FP)
+
+★ Check similarity of results
+from some trained model to get features (vectors), and calculate distance of vectors: 
+cosine_similarity, ... ,...
+https://blog.csdn.net/u010412858/article/details/60467382
+
+★  Advanced:
+▼ Quantile regression
+
+▼ XNN (explainable NN): arXiv: 1806.01933
