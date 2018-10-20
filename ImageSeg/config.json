@@ -1,0 +1,15 @@
+{
+	"Dataset" : {
+		"name":"CCP",
+		"img_dirct"  :"../../clothing-co-parsing-master/photos/",
+		"mask_dirct" :"../../clothing-co-parsing-master/annotations/pixel-level"
+	},
+	"Model" : {
+		"name" : "unet",
+		"img_height" : 320,
+		"img_width" : 208
+	},
+	"Num_epoch": 10,
+	"Steps_per_epoch" : 100,
+	"Batch_size": 8
+}
