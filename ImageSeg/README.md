@@ -1,9 +1,11 @@
-
+# Image Segmentation
 
 Plan:
 
-1. implement a famous model and train/test on a famous dataset. For example, U-Net/Pascal VOC.
+1. implement a famous model and train/test on a famous dataset. For example, U-Net.
 
-2. apply the model for a challenge and fine-tune.
+2. build the model for a dataset/challenge and fine-tune.
 
-https://grand-challenge.org/challenges/
+[Clothing Co-Parsing (CCP) dataset](https://github.com/bearpaw/clothing-co-parsing)
+
+[ISBI](https://grand-challenge.org/challenges/)
