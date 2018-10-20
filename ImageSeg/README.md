@@ -11,7 +11,7 @@ reference: [Multi-Class U-Net for Segmentation of Non-Biometric Identifiers](htt
 
 ### Training
 - Training strategy
-  - Simplified from 59 tags to 14 tags 
+  - Simplified 59 tags to 14 tags 
   - Training with 1004 images with precise pixel-level annotations.
   - Test on other images with only image-level annotations and look with eyes :eyes:
   
