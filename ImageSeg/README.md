@@ -28,6 +28,10 @@ reference: [Multi-Class U-Net for Segmentation of Non-Biometric Identifiers](htt
 - Look with eyes :flushed:
 
 
+### To-do
+- Split data with pixel-level annotations into train/vali/test, evaluate the test set
+- Data augmentation with img/mask
+
 <img src="TestImage/fig_test.png" width="100px"/> <img src="TestImage/fig_seg.png" width="100px"/>
 
 ## Plan
