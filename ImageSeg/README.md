@@ -18,6 +18,7 @@ reference: [Multi-Class U-Net for Segmentation of Non-Biometric Identifiers](htt
 
 ### Training
 - Training strategy
+  - resize image shape to 320x208
   - Simplified 59 tags to 14 tags 
   - Model trained with 704 images, validated with 100 images, test with 200 images.
   - Data augmentation:
