@@ -2,6 +2,8 @@
 
 ## CCP dataset with UNet
 
+[Clothing Co-Parsing (CCP) dataset](https://github.com/bearpaw/clothing-co-parsing)
+
 reference: [Multi-Class U-Net for Segmentation of Non-Biometric Identifiers](https://www.fer.unizg.hr/_download/repository/IMVIP_2017_HrkacBrkicKalafatic.pdf)
 
 ### Main dependencies
@@ -9,40 +11,75 @@ reference: [Multi-Class U-Net for Segmentation of Non-Biometric Identifiers](htt
 - Tensorflow 1.8.0
 - KERAS 2.2.2
 
+### Model
+- U-Net as shown in reference
+- Loss function: binary_crossentropy
+- optimizer: Adadelta
+
 ### Training
 - Training strategy
   - Simplified 59 tags to 14 tags 
-  - Training with 1004 images with precise pixel-level annotations.
-  - Test on other images with only image-level annotations and look with eyes :eyes:
+  - Model trained with 704 images, validated with 100 images, test with 200 images.
+  - Data augmentation:
+    horizontal flip/noise/averaging blurring/horizontal shift/rotation
   
 - Training option:
-`"Num_epoch": 100,
+`"Num_epoch": 1100,
 	"Steps_per_epoch" : 100,
 	"Batch_size": 16`
-  
-  First time: `loss: 0.0178 - acc: 0.9936`
-  
-  Second time: `loss: 0.0071 - acc: 0.9974`
-  
-### Result
-- Look with eyes :flushed:
 
-<img src="TestImage/fig_test.png" width="100px"/> <img src="TestImage/fig_seg.png" width="100px"/>
+	
+### Result
+
+- history of loss in training set and validation set
+
+|No data augmentation|With data augmentation|
+|-------------------|-----------------------|
+|<img src="TestImage/history_no_Aug.png" width="300px"/>| <img src="TestImage/history.png" width="300px"/>|
+|lowest loss:0.00145<br>lowest vali_loss:0.03872|lowest loss:0.00513<br>lowest vali_loss:0.03681|
+
+- Results of the best validated model, test on test set
+
+|Image|True mask|Predicted mask|
+|-----|---------|--------------|
+|<img src="TestImage/img.png" width="150px"/>|<img src="TestImage/mask_true.png" width="200px"/>|<img src="TestImage/mask_predict.png" width="200px"/>|
+|<img src="TestImage/img_1.png" width="150px"/>|<img src="TestImage/mask_true_1.png" width="200px"/>|<img src="TestImage/mask_predict_1.png" width="200px"/>|
+
+- Evaluation of metrics on test set
+
+##### mean IoU of each class:
+
+IoU definition: TP/(FN+TP+FP)
+
+mean IoU: sum of IoU/(number of valid events which contain the class)
+
+|background|hair |skin |accessories|hat  |coat     |shirt|
+|----------|-----|-----|-----------|-----|---------|-----|
+|0.975|0.583|0.708|0.263|0.002|0.171|0.392|
+
+|trousers  |dress|skirt|underwear  |socks|scarf/tie|shoes|
+|----------|-----|-----|-----------|-----|---------|-----|
+|0.447|0.263|0.025|0.000|0.027|0.000|0.642|
+
+
+##### mean precision of each class: 
+
+precision definition: TP/(TP+FP)
+
+mean precision: sum of precision/(number of valid events which contain the class)
+	
+|background|hair |skin |accessories|hat  |coat     |shirt|
+|----------|-----|-----|-----------|-----|---------|-----|
+|0.983|0.723|0.801|0.359|0.002|0.342|0.639|
+
+|trousers  |dress|skirt|underwear  |socks|scarf/tie|shoes|
+|----------|-----|-----|-----------|-----|---------|-----|
+|0.722|0.500|0.044|0.000|0.037|0.000|0.750|
+
+Some classes are very few (hat, underwear, scarf/tie), 
+and some classes are confused (coat/shirt/trousers/dress).
 
 ### To-do
-- Split data with pixel-level annotations into train/vali/test, evaluate the test set
-- Data augmentation with img/mask
-
-## Plan
-
-1. implement a famous model and train/test on a famous dataset. For example, U-Net.
-
-2. build the model for a dataset/challenge and fine-tune.
-
-[Clothing Co-Parsing (CCP) dataset](https://github.com/bearpaw/clothing-co-parsing)
-
-[ISBI](https://grand-challenge.org/challenges/)
-
-
-
+- fine tune model to solve overtraining
+- Implement other semantic segmentation model
 
