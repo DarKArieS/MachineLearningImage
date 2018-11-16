@@ -1,15 +1,52 @@
-# Image Segmentation
+# Image Segmentation with KERAS
+### Main dependencies
+- python 3.5.2
+- Tensorflow 1.8.0
+- KERAS 2.2.2
+
+## Brain Tumours dataset with 3D-UNet
+[Medical Segmentation Decathlon - Brain Tumours (BRATS 2016 and 2017 datasets)](http://medicaldecathlon.com/)
+ 
+### Model
+- Simple 3D U-Net
+- Loss function: binary_crossentropy
+- optimizer: Adadelta
+
+### Training
+- Training strategy
+  - Image Size: 240x240x155
+  - Model trained with 388 images, validated with 48 images, test with 48 images.
+  - Patch Size: 64x64x64
+  
+- Training option:
+`"Num_epoch": 1000,
+	"Steps_per_epoch" : 50,
+	"Batch_size": 4`
+  
+ 
+### Result
+
+Test on test set.
+
+|Image|Ground Truth|Predicted|
+|-----|---------|--------------|
+|<img src="TestImage/BraTs_img.gif" width="200px"/>|<img src="TestImage/BraTs_truth.gif" width="200px"/>|<img src="TestImage/BraTs_predict.gif" width="200px"/>|
+
+Average WT dice scores: 0.796
+
+Average TC dice scores: 0.728
+
+Average ET dice scores: 0.631
+
+### Reference:
+ - [tkuanlun350/3DUnet-Tensorflow-Brats18](https://github.com/tkuanlun350/3DUnet-Tensorflow-Brats18)
+ - [ellisdg/3DUnetCNN](https://github.com/ellisdg/3DUnetCNN)
 
 ## CCP dataset with UNet
 
 [Clothing Co-Parsing (CCP) dataset](https://github.com/bearpaw/clothing-co-parsing)
 
 reference: [Multi-Class U-Net for Segmentation of Non-Biometric Identifiers](https://www.fer.unizg.hr/_download/repository/IMVIP_2017_HrkacBrkicKalafatic.pdf)
-
-### Main dependencies
-- python 3.5.2
-- Tensorflow 1.8.0
-- KERAS 2.2.2
 
 ### Model
 - U-Net as shown in reference
