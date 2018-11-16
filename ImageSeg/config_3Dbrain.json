@@ -1,0 +1,22 @@
+{
+	"Dataset" : {
+		"name":"CCP",
+		"img_dirct"  :"/home/cyeh/Data/Task01_BrainTumour/imagesTr/",
+		"mask_dirct" :"/home/cyeh/Data/Task01_BrainTumour/labelsTr/",
+		"vali_split": 0.1 ,
+		"test_split": 0.2
+	},
+	"Data_Aug":{
+		"train_used" : true
+	},
+	"Model" : {
+		"name" : "3D_unet",
+		"img_height" : 64,
+		"img_width" : 64,
+		"img_depth": 64,
+		"img_channels": 4
+	},
+	"Num_epoch": 200,
+	"Steps_per_epoch" : 50,
+	"Batch_size": 4
+}

@@ -6,6 +6,7 @@ from random import randint
 import cv2
 import skimage as sk
 import warnings
+from .utils_3Dimg import *
 
 sim_labels_code=[
         {0},#null
@@ -105,9 +106,7 @@ def adjustData(img,mask, nclass=14, data_Aug = False, Aug_seed = None, Do_one_ho
 	
 	# print(mask.shape)
 	return(img,mask)
-	
-
-	
+		
 
 class TrainGenerator:
 	def __init__(self, aug_dict, img_dirct, mask_dirct, img_height= 800, img_width= 500, validation_split = 0.0, test_split = 0.0):
@@ -170,10 +169,6 @@ class TrainGenerator:
 			res = cv2.resize(y_, dsize=(self.img_width,self.img_height), interpolation=cv2.INTER_NEAREST)
 			y.append(res)
 		
-		
-		# ... need to think another way to do data augmentation :(
-		# Use Augmentor?
-		
 		y = np.asarray(y)
 		y = y.reshape(y.shape[0],y.shape[1],y.shape[2],1)
 		
@@ -210,3 +205,107 @@ class TrainGenerator:
 			img,mask = adjustData(img,mask,data_Aug=data_Aug,Aug_seed=Aug_seed,Do_one_hot=Do_one_hot)
 			yield (img,mask)
 	
+
+
+def adjustData_3D(img,mask, nclass=4, data_Aug = False, Aug_seed = None, Do_one_hot = True):
+	mask = mask.astype(np.uint8)
+
+	img = img.astype(float)
+	if(img.min()<0): img += img.min()*(-1)
+	img = img / img.max()
+	
+	if(Do_one_hot): mask = to_categorical(mask, nclass)
+	
+	return(img,mask)
+
+	
+class NIFIT_Generator:
+	def __init__(self, img_dirct, mask_dirct, img_size=(160,160,96), validation_split = 0.0, test_split = 0.0):
+		filelist = os.listdir(mask_dirct)
+		print("Total #images:" + str(len(filelist)))
+
+		#Get truth list
+		self.Mask_files=[]
+		for filename_ in filelist: self.Mask_files.append(os.path.join(mask_dirct,filename_))
+				
+		#Get train list
+		self.Img_list=[]
+		for filename_ in filelist: self.Img_list.append(os.path.join(img_dirct,filename_))
+		
+		self.img_size = img_size
+		self.validation_split=validation_split
+		self.test_split=test_split
+		if validation_split + test_split > 1.:
+			raise ValueError("validation_split + test_split > 1.")
+		
+		self.train_len = 0
+		self.vali_len = 0
+		self.test_len = 0
+		
+	def GetGenerator(self, batch_size = 10, subset=None, data_Aug = False, Aug_seed = None, Do_one_hot = True, Shuffle = True, do_corp_and_roi = True):
+		#Shuffle, data_Aug is functionless now :(
+		seed = randint(0, 100)
+		# seed = 1
+		
+		#calculate read range
+		vali_range = int(len(self.Mask_files)*self.validation_split)
+		test_range = int(len(self.Mask_files)*self.test_split)
+		start = 0
+		stop  = len(self.Mask_files)
+		if(subset=="train"):
+			start = 0
+			stop  = len(self.Mask_files) - vali_range - test_range
+			self.train_len = stop - start
+		elif(subset=="vali"):
+			if self.validation_split ==0.0: raise ValueError("no validation subset!")
+			start = len(self.Mask_files) - vali_range - test_range
+			stop  = len(self.Mask_files) - test_range
+			self.vali_len = stop - start
+		elif(subset=="test"):
+			if self.test_split ==0.0: raise ValueError("no test subset!")
+			start = len(self.Mask_files) - test_range
+			stop  = len(self.Mask_files)
+			self.test_len = stop - start
+		
+		print('read img: start:' + str(start) +'  stop:'+ str(stop))
+		
+		batch_start = start
+		batch_stop  = start + batch_size
+		
+		from scipy import ndimage as nd
+		import nibabel as nib
+		while(1):
+			# read
+			x=[]
+			y=[]
+			for idx in range(batch_start,batch_stop):
+				mask_nib = nib.load(self.Mask_files[idx])
+				mask = mask_nib.get_data()
+				img_nib = nib.load(self.Img_list[idx])
+				img = img_nib.get_data()
+				if (do_corp_and_roi): img, mask = corp_and_roi(img, mask,self.img_size)
+				
+				y.append(mask)
+				x.append(img)
+				
+			y = np.asarray(y)
+			y = y.reshape(y.shape[0],y.shape[1],y.shape[2], y.shape[3],1)
+			
+			x = np.asarray(x)
+			
+			#batch update
+			if(batch_stop==stop):
+				batch_start = start
+				batch_stop  = start + batch_size
+			else:
+				batch_start += batch_size
+				batch_stop  += batch_size
+				if(batch_stop>stop):
+					batch_stop = stop
+			
+			(x,y) = adjustData_3D(x,y,data_Aug=data_Aug,Aug_seed=Aug_seed,Do_one_hot=Do_one_hot)
+			yield (x,y)
+			
+			
+			
+			

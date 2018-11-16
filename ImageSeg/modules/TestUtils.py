@@ -1,5 +1,5 @@
 
-#import cv2
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -31,7 +31,7 @@ Label_DICT = ['Background','Hair','Skin','Acce','Hat','Coat','Shirt','Trousers',
 # tag_list = []
 # for list_ in tag_list_: tag_list.append(list_[0])
 
-def plot_Fit_History(historyfile, outfilename, metrics='loss'):
+def plot_Fit_History(historyfile, outfilename=None, metrics='loss'):
 	fig = plt.figure(figsize=(8,6))
 	dataframe = pandas.read_csv(historyfile, delim_whitespace=True, header=0)
 	if metrics=='loss':
@@ -41,26 +41,36 @@ def plot_Fit_History(historyfile, outfilename, metrics='loss'):
 			d = dataframe.values[:,i]
 			plt.plot(d,label = dataframe.columns[i])
 	plt.legend(loc='best')
-	fig.savefig(str(outfilename)+'.png')
+	if(outfilename):fig.savefig(str(outfilename)+'.png')
 	plt.show()
 
 def inverse_one_hot_RGB(y):
 	plottmp = np.zeros(y[:,:,0].shape + (3,))
-	plottmp.astype(np.uint)
+	
 	for cat in range(0,14):
 		plottmp[y[:,:,cat]>0.5,:]=COLOR_DICT[cat]
 	
+	plottmp.astype(np.uint)
 	return plottmp
 	
 def inverse_one_hot_1D(y):
-	plottmp = np.zeros(y[:,:,0].shape)
+	plottmp = np.zeros(y[... ,0].shape)
+	
+	for cat in range(y.shape[-1]):
+		plottmp[y[... ,cat]>0.5]=cat
+	
 	plottmp.astype(np.uint)
-	for cat in range(0,14):
-		plottmp[y[:,:,cat]>0.5]=cat
-	
 	return plottmp
+
+def ImgPlot(x, outputname=None):
+	fig = plt.figure(figsize=(3,4))
+	plt.imshow(x)
+	plt.show()
+	if(outputname): fig.savefig(str(outputname)+'.png')
 	
-def TestMaskPlot(y):
+def TestMaskPlot(y, outputname=None):
+	fig = plt.figure(figsize=(4.5,4))
+	ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
 	plottmp = np.zeros(y[:,:,0].shape)
 	plottmp.astype(np.uint)
 	for cat in range(0,14):
@@ -71,6 +81,7 @@ def TestMaskPlot(y):
 	patches = [ mpatches.Patch(color=colors[i], label="{l}".format(l=Label_DICT[i]) ) for i in range(14) ]
 	plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. )
 	plt.show()
+	if(outputname): fig.savefig(str(outputname)+'.png')
 	pass
 	
 	
@@ -132,3 +143,64 @@ def Mean_Precision(y,y_true, ncat=14):
 	with warnings.catch_warnings():
 		warnings.simplefilter("ignore")
 		return pixel_acc_sum/pixel_acc_valiEvent
+
+def binary_dice3d(s,g):
+	# code from: https://github.com/tkuanlun350/3DUnet-Tensorflow-Brats18
+    """
+    dice score of 3d binary volumes
+    inputs: 
+        s: segmentation volume
+        g: ground truth volume
+    outputs:
+        dice: the dice score
+    """
+    assert(len(s.shape)==3)
+    [Ds, Hs, Ws] = s.shape
+    [Dg, Hg, Wg] = g.shape
+    assert(Ds==Dg and Hs==Hg and Ws==Wg)
+    prod = np.multiply(s, g)
+    s0 = prod.sum()
+    s1 = s.sum()
+    s2 = g.sum()
+    dice = (2.0*s0 + 1e-10)/(s1 + s2 + 1e-10)
+    return dice
+		
+def brats_dice_score(y, y_truth, tumor_type):
+	# input: (x,y,z)
+	# 0: whole tumor (WT): labeled region			(label >  0)
+	# 1: core region (TC): except "edema"  			(label >  1)
+	# 2: active region (ET): only enhancing core 	(label == 3)
+	if tumor_type == 0:
+		s = y > 0
+		g = y_truth > 0
+	elif tumor_type == 1:
+		s = y > 1
+		g = y_truth > 1
+	elif tumor_type == 2:
+		s = y ==3
+		g = y_truth ==3
+	else:
+		return 0
+		
+	return binary_dice3d(s,g)
+
+import imageio
+def brats_generate_gif(output, y, axis = 0):
+	assert(len(y.shape)==3)
+	input_shape = y.shape
+	
+	imgs_2D = []
+	for frame in range(input_shape[axis]):
+		if axis==0 : img = y[frame , ...]
+		if axis==1 : img = y[:,frame,:]
+		if axis==2 : img = y[... , frame]
+		
+		#img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+		img = img.astype(np.uint8)
+		imgs_2D.append(img)
+		
+	imageio.mimsave( output + '.gif', imgs_2D)
+	pass
+
+
+	
