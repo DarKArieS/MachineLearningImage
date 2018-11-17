@@ -7,6 +7,10 @@ import cv2
 import skimage as sk
 import warnings
 from .utils_3Dimg import *
+import nibabel as nib
+# from scipy import ndimage as nd
+from keras.preprocessing.image import ImageDataGenerator
+import scipy.io
 
 sim_labels_code=[
         {0},#null
@@ -126,7 +130,6 @@ class TrainGenerator:
 		self.img_height= img_height
 		self.img_width= img_width
 		
-		from keras.preprocessing.image import ImageDataGenerator
 		# self.mask_datagen = ImageDataGenerator(**aug_dict, channel_shift_range=0, zca_whitening=False)
 		# self.img_datagen = ImageDataGenerator(**aug_dict)
 		self.mask_datagen = ImageDataGenerator()
@@ -161,7 +164,6 @@ class TrainGenerator:
 		print('start:' + str(start) +'  stop:'+ str(stop))
 		
 		# read mask
-		import scipy.io
 		y = []
 		for input_file in self.Mask_files[start:stop]:
 			mat = scipy.io.loadmat(input_file)
@@ -238,47 +240,56 @@ class NIFIT_Generator:
 		if validation_split + test_split > 1.:
 			raise ValueError("validation_split + test_split > 1.")
 		
-		self.train_len = 0
-		self.vali_len = 0
-		self.test_len = 0
+		#calculate read range
+		self.len	  = len(self.Mask_files)
+		
+		self.vali_len = int(len(self.Mask_files)*self.validation_split)
+		self.test_len = int(len(self.Mask_files)*self.test_split)
+		
+		self.train_start = 0
+		self.train_stop  = len(self.Mask_files) - self.vali_len - self.test_len
+		self.train_len   = self.train_stop - self.train_start
+		
+		self.vali_start = len(self.Mask_files) - self.vali_len - self.test_len
+		self.vali_stop  = len(self.Mask_files) - self.test_len
+		
+		self.test_start = len(self.Mask_files) - self.test_len
+		self.test_stop  = len(self.Mask_files)
+		
 		
 	def GetGenerator(self, batch_size = 10, subset=None, data_Aug = False, Aug_seed = None, Do_one_hot = True, Shuffle = True, do_corp_and_roi = True):
-		#Shuffle, data_Aug is functionless now :(
-		seed = randint(0, 100)
+		#data_Aug is functionless now :(
+		# seed = randint(0, 100)
 		# seed = 1
 		
-		#calculate read range
-		vali_range = int(len(self.Mask_files)*self.validation_split)
-		test_range = int(len(self.Mask_files)*self.test_split)
 		start = 0
 		stop  = len(self.Mask_files)
+			
 		if(subset=="train"):
-			start = 0
-			stop  = len(self.Mask_files) - vali_range - test_range
-			self.train_len = stop - start
+			start = self.train_start
+			stop  = self.train_stop
 		elif(subset=="vali"):
 			if self.validation_split ==0.0: raise ValueError("no validation subset!")
-			start = len(self.Mask_files) - vali_range - test_range
-			stop  = len(self.Mask_files) - test_range
-			self.vali_len = stop - start
+			start = self.vali_start
+			stop  = self.vali_stop
 		elif(subset=="test"):
 			if self.test_split ==0.0: raise ValueError("no test subset!")
-			start = len(self.Mask_files) - test_range
-			stop  = len(self.Mask_files)
-			self.test_len = stop - start
+			start = self.test_start
+			stop  = self.test_stop
 		
 		print('read img: start:' + str(start) +'  stop:'+ str(stop))
 		
-		batch_start = start
-		batch_stop  = start + batch_size
+		indices = np.arange(start,stop)
+		if Shuffle: np.random.shuffle(indices)
 		
-		from scipy import ndimage as nd
-		import nibabel as nib
+		batch_start = 0
+		batch_stop  = batch_size
+		
 		while(1):
 			# read
 			x=[]
 			y=[]
-			for idx in range(batch_start,batch_stop):
+			for idx in indices[batch_start:batch_stop]: #range(batch_start,batch_stop):
 				mask_nib = nib.load(self.Mask_files[idx])
 				mask = mask_nib.get_data()
 				img_nib = nib.load(self.Img_list[idx])
@@ -295,8 +306,9 @@ class NIFIT_Generator:
 			
 			#batch update
 			if(batch_stop==stop):
-				batch_start = start
-				batch_stop  = start + batch_size
+				batch_start = 0
+				batch_stop  = batch_size
+				if Shuffle: np.random.shuffle(indices)
 			else:
 				batch_start += batch_size
 				batch_stop  += batch_size
