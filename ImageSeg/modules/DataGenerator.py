@@ -268,14 +268,17 @@ class NIFIT_Generator:
 		if(subset=="train"):
 			start = self.train_start
 			stop  = self.train_stop
+			dataset_len = self.train_len
 		elif(subset=="vali"):
 			if self.validation_split ==0.0: raise ValueError("no validation subset!")
 			start = self.vali_start
 			stop  = self.vali_stop
+			dataset_len = self.vali_len
 		elif(subset=="test"):
 			if self.test_split ==0.0: raise ValueError("no test subset!")
 			start = self.test_start
 			stop  = self.test_stop
+			dataset_len = self.test_len
 		
 		print('read img: start:' + str(start) +'  stop:'+ str(stop))
 		
@@ -300,20 +303,21 @@ class NIFIT_Generator:
 				x.append(img)
 				
 			y = np.asarray(y)
+			# print(subset + str(y.shape) + ' : ' + str(batch_start) + '-' + str(batch_stop))
 			y = y.reshape(y.shape[0],y.shape[1],y.shape[2], y.shape[3],1)
 			
 			x = np.asarray(x)
 			
 			#batch update
-			if(batch_stop==stop):
+			if(batch_stop==dataset_len):
 				batch_start = 0
 				batch_stop  = batch_size
 				if Shuffle: np.random.shuffle(indices)
 			else:
 				batch_start += batch_size
 				batch_stop  += batch_size
-				if(batch_stop>stop):
-					batch_stop = stop
+				if(batch_stop>dataset_len):
+					batch_stop = dataset_len
 			
 			(x,y) = adjustData_3D(x,y,data_Aug=data_Aug,Aug_seed=Aug_seed,Do_one_hot=Do_one_hot)
 			yield (x,y)
